@@ -104,6 +104,10 @@
       user-select: none;
     }
     
+    .cell.highlight {
+      background-color: rgba(255, 255, 0, 0.3);
+    }
+    
     /* colors!! */
     .red { background-color: #ff6b6b; }
     .blue { background-color: #70a1ff; }
@@ -358,9 +362,9 @@
           <div class="board" id="edit-board"></div>
         </div>
         
-        <!-- <div class="controls">
+        <div class="controls">
           <h3>Edit Chutes and Ladders</h3>
-          <div id="edit-info">Click on two cells to create a connection</div> -->
+          <div id="edit-info">Click on two cells to create a connection</div>
 
           <!-- Add this HTML for the modal form after the win modal -->
 <div class="modal" id="transitionModal">
@@ -394,7 +398,7 @@
               <button id="add-ladder-button" class="active">Add Ladder</button>
               <button id="add-chute-button">Add Chute</button>
             </div>
-            <!-- <button id="reset-selection-button">Reset Selection</button> -->
+            <button id="reset-selection-button">Reset Selection</button>
             <button id="reset-board-button">Reset to Default</button>
             
             <div class="transition-list" id="transition-list">
@@ -1010,15 +1014,15 @@ document.getElementById('cancel-transition-button').addEventListener('click', ()
       updateEditInfo();
     }
     
-    // function updateEditInfo() {
-    //   const infoElement = document.getElementById('edit-info');
+    function updateEditInfo() {
+      const infoElement = document.getElementById('edit-info');
       
-    //   if (selectedCells.length === 0) {
-    //     infoElement.textContent = 'Click on two cells to create a connection';
-    //   } else if (selectedCells.length === 1) {
-    //     infoElement.textContent = `Selected: ${selectedCells[0]}. Click another cell to create a ${editMode}`;
-    //   }
-    // }
+      if (selectedCells.length === 0) {
+        infoElement.textContent = 'Click on two cells to create a connection';
+      } else if (selectedCells.length === 1) {
+        infoElement.textContent = `Selected: ${selectedCells[0]}. Click another cell to create a ${editMode}`;
+      }
+    }
     
     function updateTransitionList() {
       const listElement = document.getElementById('transition-list');
@@ -1351,7 +1355,5 @@ aggregatedBins.forEach((binData, index) => {
     // Run init when DOM is loaded
     document.addEventListener('DOMContentLoaded', init);
   </script>
-
-  <p><p>&copy; 2025 Gary Hu</p>
 </body>
 </html>
