@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gambler's Ruin Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .simulation-results {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #resetButton {
+            background-color: #f44336;
+        }
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .input-label {
+            min-width: 180px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .tie-probability {
+            padding: 5px 10px;
+            background-color: #e7f3fe;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #progressBar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        #progressFill {
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            width: 0%;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+        .info-panel {
+            background-color: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            padding: 10px;
+            margin: 15px 0;
+        }
+        .money-distribution {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 4px;
+        }
+        #trialCountDisplay, #roundCountDisplay {
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gambler's Ruin Simulation</h1>
+    
+    <div class="info-panel">
+        <p><strong>Problem Description:</strong> Two players, A and B, start with custom amounts of money that sum to N. 
+        Each round, player A has a probability p of stealing 1 dollar from player B, player B has a probability q of stealing 1 dollar from player A, 
+        and they have a probability 1-p-q of tying. The game continues until one player goes bankrupt.</p>
+    </div>
+    
+    <div class="container">
+        <div class="control-panel">
+            <div class="input-container">
+                <!-- Total Money Input -->
+                <div class="input-row">
+                    <div class="input-label">Total Money (N):</div>
+                    <input type="number" id="totalMoney" min="2" max="1000" value="20">
+                </div>
+                
+                <!-- Starting Money for Player A Input -->
+                <div class="input-row">
+                    <div class="input-label">Player A Starting Money (i):</div>
+                    <input type="number" id="playerAMoney" min="1" max="19" value="10">
+                </div>
+                
+                <div class="money-distribution">
+                    <span>Money Distribution: Player A: <span id="playerAMoneyDisplay">10</span>, Player B: <span id="playerBMoneyDisplay">10</span></span>
+                </div>
+                
+                <!-- Probability Inputs -->
+                <div class="input-row">
+                    <div class="input-label">Probability for A (p):</div>
+                    <input type="number" id="probabilityA" min="0.01" max="0.99" step="0.01" value="0.24">
+                </div>
+                
+                <div class="input-row">
+                    <div class="input-label">Probability for B (q):</div>
+                    <input type="number" id="probabilityB" min="0.01" max="0.99" step="0.01" value="0.24">
+                </div>
+                
+                <div class="tie-probability">
+                    Tie probability (1-p-q): <span id="tieProbability">0.52</span>
+                </div>
+                
+                <!-- Number of Trials Input -->
+                <div class="input-row">
+                    <div class="input-label">Number of Trials:</div>
+                    <input type="number" id="numTrials" min="100" max="10000" step="100" value="1000">
+                </div>
+            </div>
+            
+            <div class="buttons-container">
+                <button id="startButton">Run Simulation</button>
+                <button id="resetButton">Reset</button>
+            </div>
+        </div>
+        
+        <div id="progressBar">
+            <div id="progressFill">0%</div>
+        </div>
+        
+        <div class="simulation-results">
+            <h2>Simulation Results</h2>
+            <p>Trials completed: <span id="trialCountDisplay">0</span> / <span id="totalTrialsDisplay">1,000</span></p>
+            <p>Total rounds simulated: <span id="roundCountDisplay">0</span></p>
+            <p>Probability of Player A winning: <span id="winProbabilityA">-</span></p>
+            <p>Probability of Player B winning: <span id="winProbabilityB">-</span></p>
+            
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Total Money (N)</th>
+                        <th>Player A Start (i)</th>
+                        <th>Player B Start (N-i)</th>
+                        <th>Prob. A (p)</th>
+                        <th>Prob. B (q)</th>
+                        <th>Trials</th>
+                        <th>Player A Win %</th>
+                        <th>Player B Win %</th>
+                        <th>Avg. Rounds</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Results will be added here -->
+                </tbody>
+            </table>
+            
+            <div class="chart-container">
+                <canvas id="resultsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const totalMoneyInput = document.getElementById('totalMoney');
+        const playerAMoneyInput = document.getElementById('playerAMoney');
+        const playerAMoneyDisplay = document.getElementById('playerAMoneyDisplay');
+        const playerBMoneyDisplay = document.getElementById('playerBMoneyDisplay');
+        const probabilityAInput = document.getElementById('probabilityA');
+        const probabilityBInput = document.getElementById('probabilityB');
+        const tieProbability = document.getElementById('tieProbability');
+        const numTrialsInput = document.getElementById('numTrials');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const trialCountDisplay = document.getElementById('trialCountDisplay');
+        const totalTrialsDisplay = document.getElementById('totalTrialsDisplay');
+        const roundCountDisplay = document.getElementById('roundCountDisplay');
+        const winProbabilityADisplay = document.getElementById('winProbabilityA');
+        const winProbabilityBDisplay = document.getElementById('winProbabilityB');
+        const resultsTable = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+        
+        // Chart
+        let resultsChart = null;
+        
+        // Simulation data
+        const allResults = {};
+        let isSimulationRunning = false;
+        
+        // Initialize values
+        updateTieProbability();
+        updateMoneyDistribution();
+        totalTrialsDisplay.textContent = formatNumber(numTrialsInput.value);
+        
+        // Format number with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // Event listeners for input validation
+        totalMoneyInput.addEventListener('input', () => {
+            // Ensure Player A money is valid when total money changes
+            validatePlayerAMoney();
+            updateMoneyDistribution();
+        });
+        
+        playerAMoneyInput.addEventListener('input', () => {
+            validatePlayerAMoney();
+            updateMoneyDistribution();
+        });
+        
+        probabilityAInput.addEventListener('input', () => {
+            validateProbabilities();
+            updateTieProbability();
+        });
+        
+        probabilityBInput.addEventListener('input', () => {
+            validateProbabilities();
+            updateTieProbability();
+        });
+        
+        numTrialsInput.addEventListener('input', () => {
+            totalTrialsDisplay.textContent = formatNumber(numTrialsInput.value);
+        });
+        
+        // Validate Player A money doesn't exceed total
+        function validatePlayerAMoney() {
+            const totalMoney = parseInt(totalMoneyInput.value);
+            const playerAMoney = parseInt(playerAMoneyInput.value);
+            
+            // Set limits for playerAMoney input
+            playerAMoneyInput.max = totalMoney - 1;
+            
+            // Ensure player A has at least 1 dollar
+            if (playerAMoney < 1) {
+                playerAMoneyInput.value = 1;
+            }
+            
+            // Ensure player B has at least 1 dollar
+            if (playerAMoney >= totalMoney) {
+                playerAMoneyInput.value = totalMoney - 1;
+            }
+        }
+        
+        // Update money distribution display
+        function updateMoneyDistribution() {
+            const totalMoney = parseInt(totalMoneyInput.value);
+            const playerAMoney = parseInt(playerAMoneyInput.value);
+            const playerBMoney = totalMoney - playerAMoney;
+            
+            playerAMoneyDisplay.textContent = playerAMoney;
+            playerBMoneyDisplay.textContent = playerBMoney;
+        }
+        
+        // Validate probabilities don't exceed 1
+        function validateProbabilities() {
+            const pA = parseFloat(probabilityAInput.value);
+            const pB = parseFloat(probabilityBInput.value);
+            
+            if (pA + pB > 0.99) {
+                probabilityBInput.value = Math.max(0.01, 0.99 - pA).toFixed(2);
+            }
+        }
+        
+        // Update tie probability display
+        function updateTieProbability() {
+            const pA = parseFloat(probabilityAInput.value);
+            const pB = parseFloat(probabilityBInput.value);
+            const pTie = Math.max(0, 1 - pA - pB).toFixed(2);
+            tieProbability.textContent = pTie;
+        }
+        
+        // Play a single game of Gambler's Ruin
+        function playGamble(initialA, initialB, pA, pB) {
+            let moneyA = initialA;
+            let moneyB = initialB;
+            let rounds = 0;
+            
+            while (moneyA > 0 && moneyB > 0) {
+                rounds++;
+                // Generate a random number to determine the outcome
+                const random = Math.random();
+                
+                if (random < pA) {
+                    // A wins
+                    moneyA++;
+                    moneyB--;
+                } else if (random < pA + pB) {
+                    // B wins
+                    moneyA--;
+                    moneyB++;
+                }
+                // Otherwise, it's a tie and no money changes hands
+            }
+            
+            // Return result: 1 if A wins, 0 if B wins, and the number of rounds played
+            return {
+                winner: moneyB <= 0 ? 1 : 0,
+                rounds: rounds
+            };
+        }
+        
+        // Run multiple trials
+        async function runTrials(N, i, pA, pB, numTrials) {
+            const moneyA = i;
+            const moneyB = N - i;
+            
+            let winsA = 0;
+            let totalRounds = 0;
+            let completedTrials = 0;
+            
+            // Update display
+            totalTrialsDisplay.textContent = formatNumber(numTrials);
+            
+            // Input validation
+            if (pA + pB > 1) {
+                alert("Error: Sum of probabilities p and q must be less than or equal to 1");
+                return null;
+            }
+            
+            // Enable progress tracking
+            progressBar.style.display = 'block';
+            startButton.disabled = true;
+            isSimulationRunning = true;
+            
+            function updateProgress() {
+                const percentage = Math.floor((completedTrials / numTrials) * 100);
+                progressFill.style.width = percentage + '%';
+                progressFill.textContent = percentage + '%';
+                trialCountDisplay.textContent = formatNumber(completedTrials);
+                roundCountDisplay.textContent = formatNumber(totalRounds);
+            }
+            
+            // Break up the simulation into chunks to avoid freezing the UI
+            const chunkSize = Math.min(50, Math.ceil(numTrials / 20)); // Adjust chunk size based on total trials
+            
+            for (let i = 0; i < numTrials; i += chunkSize) {
+                // Run a chunk of simulations
+                const end = Math.min(i + chunkSize, numTrials);
+                
+                for (let j = i; j < end; j++) {
+                    const result = playGamble(moneyA, moneyB, pA, pB);
+                    winsA += result.winner;
+                    totalRounds += result.rounds;
+                    completedTrials++;
+                }
+                
+                // Update UI
+                updateProgress();
+                
+                // Allow UI to update by yielding to the event loop
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+            
+            const winProbabilityA = winsA / numTrials;
+            const winProbabilityB = 1 - winProbabilityA;
+            const avgRounds = totalRounds / numTrials;
+            
+            // Store results with a unique key that includes all parameters
+            const resultKey = `${N}_${moneyA}_${moneyB}_${pA}_${pB}_${numTrials}`;
+            allResults[resultKey] = {
+                N: N,
+                moneyA: moneyA,
+                moneyB: moneyB,
+                pA: pA,
+                pB: pB,
+                numTrials: numTrials,
+                winProbabilityA: winProbabilityA,
+                winProbabilityB: winProbabilityB,
+                totalRounds: totalRounds,
+                avgRounds: avgRounds
+            };
+            
+            // Update UI
+            winProbabilityADisplay.textContent = winProbabilityA.toFixed(4);
+            winProbabilityBDisplay.textContent = winProbabilityB.toFixed(4);
+            updateTable();
+            updateChart();
+            
+            // Reset UI state
+            progressBar.style.display = 'none';
+            startButton.disabled = false;
+            isSimulationRunning = false;
+            
+            return {
+                winProbabilityA: winProbabilityA,
+                winProbabilityB: winProbabilityB,
+                totalRounds: totalRounds,
+                avgRounds: avgRounds
+            };
+        }
+        
+        // Update the results table
+        function updateTable() {
+            // Clear existing rows
+            resultsTable.innerHTML = '';
+            
+            // Add new rows for each result
+            Object.keys(allResults).forEach(key => {
+                const result = allResults[key];
+                const row = resultsTable.insertRow();
+                
+                const cellN = row.insertCell(0);
+                const cellMoneyA = row.insertCell(1);
+                const cellMoneyB = row.insertCell(2);
+                const cellProbA = row.insertCell(3);
+                const cellProbB = row.insertCell(4);
+                const cellTrials = row.insertCell(5);
+                const cellWinProbA = row.insertCell(6);
+                const cellWinProbB = row.insertCell(7);
+                const cellAvgRounds = row.insertCell(8);
+                
+                cellN.textContent = result.N;
+                cellMoneyA.textContent = result.moneyA;
+                cellMoneyB.textContent = result.moneyB;
+                cellProbA.textContent = result.pA.toFixed(2);
+                cellProbB.textContent = result.pB.toFixed(2);
+                cellTrials.textContent = formatNumber(result.numTrials);
+                cellWinProbA.textContent = result.winProbabilityA.toFixed(4);
+                cellWinProbB.textContent = result.winProbabilityB.toFixed(4);
+                cellAvgRounds.textContent = (result.totalRounds / result.numTrials).toFixed(2);
+            });
+        }
+        
+        // Update the chart to show winning probabilities for both players
+        function updateChart() {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            
+            // Prepare data for the chart
+            const labels = [];
+            const dataA = [];
+            const dataB = [];
+            
+            Object.values(allResults).forEach(result => {
+                const label = `N=${result.N}, A:${result.moneyA}, B:${result.moneyB}, p=${result.pA.toFixed(2)}, q=${result.pB.toFixed(2)}`;
+                labels.push(label);
+                dataA.push(result.winProbabilityA);
+                dataB.push(result.winProbabilityB);
+            });
+            
+            // Destroy existing chart if it exists
+            if (resultsChart) {
+                resultsChart.destroy();
+            }
+            
+            // Create new chart with bars for both players
+            resultsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Player A Win Probability',
+                            data: dataA,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Player B Win Probability',
+                            data: dataB,
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            title: {
+                                display: true,
+                                text: 'Win Probability'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Simulation Parameters'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Gambler\'s Ruin Simulation Results'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const label = context.dataset.label;
+                                    return `${label}: ${value.toFixed(4)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Event listeners for buttons
+        startButton.addEventListener('click', async () => {
+            if (isSimulationRunning) return;
+            
+            const N = parseInt(totalMoneyInput.value);
+            const i = parseInt(playerAMoneyInput.value);
+            const pA = parseFloat(probabilityAInput.value);
+            const pB = parseFloat(probabilityBInput.value);
+            const numTrials = parseInt(numTrialsInput.value);
+            
+            if (pA + pB > 1) {
+                alert("Sum of probabilities (p + q) must not exceed 1");
+                return;
+            }
+            
+            await runTrials(N, i, pA, pB, numTrials);
+        });
+        
+        resetButton.addEventListener('click', () => {
+            if (isSimulationRunning) return;
+            
+            // Clear results
+            Object.keys(allResults).forEach(key => delete allResults[key]);
+            
+            // Reset UI
+            trialCountDisplay.textContent = '0';
+            roundCountDisplay.textContent = '0';
+            winProbabilityADisplay.textContent = '-';
+            winProbabilityBDisplay.textContent = '-';
+            
+            // Clear table
+            resultsTable.innerHTML = '';
+            
+            // Destroy chart
+            if (resultsChart) {
+                resultsChart.destroy();
+                resultsChart = null;
+            }
+        });
+    </script>
+</body>
+</html>
